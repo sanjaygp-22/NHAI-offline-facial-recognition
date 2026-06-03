@@ -1,4 +1,5 @@
 import { CameraFrame, FaceBox, PreprocessResult } from "../../types/face";
+import { thresholds } from "../config/thresholds";
 import { detectFace } from "./detector";
 
 export async function preprocessFrame(
@@ -22,12 +23,45 @@ export async function preprocessFrame(
   }
 
   const faceBox: FaceBox = detection.box;
+  if (!isFaceBoxValid(frame, faceBox)) {
+    return {
+      status: "no_face",
+      qualityScore: stats.qualityScore,
+    };
+  }
 
   return {
     status: "ok",
     faceBox,
     qualityScore: stats.qualityScore,
   };
+}
+
+function isFaceBoxValid(frame: CameraFrame, box: FaceBox): boolean {
+  if (box.width <= 0 || box.height <= 0) {
+    return false;
+  }
+
+  const minSize =
+    Math.min(frame.width, frame.height) * thresholds.faceMinRelativeSize;
+  if (box.width < minSize || box.height < minSize) {
+    return false;
+  }
+
+  const aspect = box.width / box.height;
+  if (aspect < thresholds.faceAspectMin || aspect > thresholds.faceAspectMax) {
+    return false;
+  }
+
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
+  const dx = Math.abs(centerX - frame.width / 2) / frame.width;
+  const dy = Math.abs(centerY - frame.height / 2) / frame.height;
+  if (dx > thresholds.faceCenterTolerance || dy > thresholds.faceCenterTolerance) {
+    return false;
+  }
+
+  return true;
 }
 
 function sampleFrameStats(data: Uint8Array) {

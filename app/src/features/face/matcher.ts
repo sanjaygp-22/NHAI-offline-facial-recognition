@@ -1,4 +1,5 @@
 import { FaceEmbedding, IdentifyCandidate, MatchResult } from "../../types/face";
+import { thresholds } from "../config/thresholds";
 
 export type EnrollmentRecord = {
   personId: string;
@@ -21,7 +22,7 @@ export function matchEmbedding(
   scored.sort((a, b) => b.score - a.score);
   const bestMatch = scored[0];
 
-  if (bestMatch.score < 0.35) {
+  if (bestMatch.score < thresholds.similarity) {
     return { status: "no_match", candidates: scored.slice(0, 3) };
   }
 

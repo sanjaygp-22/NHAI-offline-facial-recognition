@@ -35,6 +35,12 @@ export default function EnrollScreen({ navigation }: EnrollScreenProps) {
         source: "mock",
       });
       setEnrollResult(result);
+      if (result.status === "ok") {
+        navigation.navigate("EnrollName", {
+          personId,
+          qualityScore: result.qualityScore,
+        });
+      }
     } finally {
       setIsRunning(false);
     }
@@ -42,42 +48,40 @@ export default function EnrollScreen({ navigation }: EnrollScreenProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.cameraPreview}>
+      <View style={styles.cameraWrap}>
         <CameraView ref={cameraRef} />
-      </View>
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Enroll New Staff</Text>
-        <Text style={styles.subtitle}>
-          Capture a clear frontal photo. We store only embeddings and discard
-          raw images.
-        </Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Enrollment Checklist</Text>
-        <View style={styles.list}>
-          <Text style={styles.listItem}>• Neutral lighting, no glare</Text>
-          <Text style={styles.listItem}>• Remove helmets and masks</Text>
-          <Text style={styles.listItem}>• One face per frame</Text>
+        <View style={styles.topBar}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Dashboard")}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+          <Text style={styles.topTitle}>Enroll Staff</Text>
         </View>
-        <View style={styles.resultBox}>
-          <Text style={styles.resultLabel}>Last Enroll</Text>
-          <Text style={styles.resultValue}>
-            {enrollResult?.status ?? "idle"}
+        <View style={styles.scanOverlay}>
+          <Text style={styles.scanTitle}>Capture a clear face</Text>
+          <Text style={styles.scanSubtitle}>
+            Remove glasses, masks, or helmets before capture.
           </Text>
         </View>
-      </View>
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.button, styles.secondaryButton]}
-          onPress={() => navigation.navigate("Identify")}
-        >
-          <Text style={styles.secondaryButtonText}>Back to Camera</Text>
-        </Pressable>
-        <Pressable style={[styles.button, styles.primaryButton]} onPress={handleEnroll}>
-          <Text style={styles.primaryButtonText}>
-            {isRunning ? "Enrolling..." : "Start Enroll"}
+        <View style={styles.captureArea}>
+          <Pressable
+            style={styles.captureButton}
+            onPress={handleEnroll}
+            disabled={isRunning}
+          >
+            <View style={styles.captureInner} />
+          </Pressable>
+          <Text style={styles.captureLabel}>
+            {isRunning ? "Enrolling..." : "Tap to enroll"}
           </Text>
-        </Pressable>
+          {enrollResult?.status ? (
+            <Text style={styles.captureStatus}>
+              Last: {enrollResult.status}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -86,106 +90,104 @@ export default function EnrollScreen({ navigation }: EnrollScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    backgroundColor: "#0a0b0d",
+    backgroundColor: "#f6f8fc",
   },
-  cameraPreview: {
-    height: 220,
-    borderRadius: 18,
-    overflow: "hidden",
+  cameraWrap: {
+    flex: 1,
+    position: "relative",
+  },
+  topBar: {
+    position: "absolute",
+    top: 14,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: 18,
+    borderColor: "rgba(31, 79, 191, 0.2)",
   },
-  headerBlock: {
-    marginTop: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: "serif",
-    fontWeight: "700",
-    color: "#f7f1e8",
-  },
-  subtitle: {
-    marginTop: 8,
-    color: "#c9c1b4",
-    fontSize: 13,
-    lineHeight: 19,
-    fontFamily: "monospace",
-  },
-  card: {
-    marginTop: 24,
-    padding: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    backgroundColor: "#101216",
-  },
-  cardTitle: {
-    color: "#ff6b35",
-    fontSize: 16,
-    fontFamily: "monospace",
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  list: {
-    marginTop: 12,
-    gap: 6,
-  },
-  listItem: {
-    color: "#f7f1e8",
-    fontSize: 13,
-    fontFamily: "monospace",
-  },
-  resultBox: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-  },
-  resultLabel: {
-    color: "#9e9487",
+  backButtonText: {
+    color: "#1f4fbf",
     fontSize: 12,
-    fontFamily: "monospace",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontFamily: "AvenirNext-DemiBold",
   },
-  resultValue: {
-    color: "#f7f1e8",
+  topTitle: {
+    color: "#ffffff",
     fontSize: 14,
-    fontFamily: "monospace",
+    fontFamily: "AvenirNext-DemiBold",
+    textShadowColor: "rgba(0, 0, 0, 0.4)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  scanOverlay: {
+    position: "absolute",
+    top: 80,
+    left: 18,
+    right: 18,
+    padding: 16,
+    backgroundColor: "rgba(18, 50, 107, 0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 20,
+  },
+  scanTitle: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontFamily: "Georgia",
+    fontWeight: "700",
+  },
+  scanSubtitle: {
+    color: "#e6efff",
     marginTop: 6,
+    fontSize: 13,
+    fontFamily: "AvenirNext-Regular",
   },
-  footer: {
-    marginTop: "auto",
-    gap: 12,
-  },
-  button: {
-    paddingVertical: 14,
-    borderRadius: 14,
+  captureArea: {
+    position: "absolute",
+    bottom: 36,
+    left: 0,
+    right: 0,
     alignItems: "center",
   },
-  primaryButton: {
-    backgroundColor: "#ff6b35",
+  captureButton: {
+    height: 74,
+    width: 74,
+    borderRadius: 37,
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(31, 79, 191, 0.25)",
   },
-  primaryButtonText: {
-    color: "#0a0b0d",
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    fontFamily: "monospace",
+  captureInner: {
+    height: 54,
+    width: 54,
+    borderRadius: 27,
+    backgroundColor: "#ffffff",
   },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#f7f1e8",
+  captureLabel: {
+    marginTop: 10,
+    color: "#e6efff",
+    fontSize: 13,
+    fontFamily: "AvenirNext-Regular",
+    textShadowColor: "rgba(0, 0, 0, 0.35)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
-  secondaryButtonText: {
-    color: "#f7f1e8",
-    fontSize: 14,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-    fontFamily: "monospace",
+  captureStatus: {
+    marginTop: 6,
+    color: "#ffffff",
+    fontSize: 12,
+    fontFamily: "AvenirNext-DemiBold",
+    textShadowColor: "rgba(0, 0, 0, 0.35)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });
